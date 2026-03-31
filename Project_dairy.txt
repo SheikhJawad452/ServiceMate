@@ -1,0 +1,21 @@
+Project Diary – Introduction
+
+This project diary records the work carried out for the project titled “ServiceMate – A Local Service Booking Platform.”
+The purpose of this diary is to document the project progress, tasks completed, challenges faced, and solutions implemented during development.
+
+This diary will serve as a reference for the development process, team coordination, and learning outcomes achieved throughout the project lifecycle.
+
+TL: hi guys
+
+hello from Chethan
+
+hello from jawad
+
+TL: the above 3 messages are test messages to check updation and editing by repo contributes 
+
+10 march 2026 - 1st team google meet 
+TL: 6 participents out of 10 members: introduction and talked about how to work on the 1st task given by mentor (Uttam sir)
+2 of the absentees had some personal reasons and informed me about it other 2 didn't respond yet
+
+11 march 2026
+Team member Sheik Jawad guided all other members with TL on the 1st task completion.
