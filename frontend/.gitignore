@@ -36,7 +36,3 @@ tmp/
 temp/
 *.tmp
 
-# Md Files
-
-info.md 
-faq.md
