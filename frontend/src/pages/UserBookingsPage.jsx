@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/common/Pagination";
 import { api } from "@/services/api";
 
 const statusBadgeMap = {
@@ -22,13 +23,19 @@ export default function UserBookingsPage() {
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: "5", comment: "" });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [pagination, setPagination] = useState(null);
 
   const fetchBookings = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await api.get("/bookings/user");
+      const response = await api.get("/bookings/user", {
+        params: { page, limit },
+      });
       setBookings(response?.data || []);
+      setPagination(response?.pagination || null);
     } catch (apiError) {
       const message = apiError?.message || "Failed to load bookings.";
       setError(message);
@@ -40,7 +47,7 @@ export default function UserBookingsPage() {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     const completedBookings = bookings.filter((booking) => booking.status === "Completed");
@@ -345,6 +352,7 @@ export default function UserBookingsPage() {
             );
           })}
         </div>
+        <Pagination page={page} totalPages={pagination?.totalPages || 1} onPageChange={setPage} />
       </section>
 
       {confirmCancelBooking ? (

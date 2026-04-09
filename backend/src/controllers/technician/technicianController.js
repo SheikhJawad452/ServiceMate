@@ -3,6 +3,7 @@ import Service from "../../models/Service.js";
 import Technician from "../../models/Technician.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
+import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
 import { uploadImageBufferToCloudinary } from "../../utils/uploadToCloudinary.js";
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -103,35 +104,51 @@ export const createTechnicianProfile = asyncHandler(async (req, res) => {
 
 export const getTechnicians = asyncHandler(async (req, res) => {
   const { city, state, country, service, minRating, minExperience } = req.query;
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   const query = await buildFilterQuery({ city, state, country, service, minRating, minExperience });
 
-  const technicians = await Technician.find(query)
-    .populate("user", "fullName avatarUrl")
-    .populate("services", "serviceName description price")
-    .sort({ averageRating: -1, experienceYears: -1, createdAt: -1 });
+  const [technicians, total] = await Promise.all([
+    Technician.find(query)
+      .populate("user", "fullName avatarUrl")
+      .populate("services", "serviceName description price")
+      .sort({ averageRating: -1, experienceYears: -1, createdAt: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Technician.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: technicians.length,
     data: technicians,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 
 export const getTechniciansByCity = asyncHandler(async (req, res) => {
   const { city } = req.params;
   const { service, minRating, minExperience, state, country } = req.query;
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   const query = await buildFilterQuery({ city, state, country, service, minRating, minExperience });
 
-  const technicians = await Technician.find(query)
-    .populate("user", "fullName avatarUrl")
-    .populate("services", "serviceName description price")
-    .sort({ averageRating: -1, experienceYears: -1, createdAt: -1 });
+  const [technicians, total] = await Promise.all([
+    Technician.find(query)
+      .populate("user", "fullName avatarUrl")
+      .populate("services", "serviceName description price")
+      .sort({ averageRating: -1, experienceYears: -1, createdAt: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Technician.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     city,
     results: technicians.length,
     data: technicians,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 

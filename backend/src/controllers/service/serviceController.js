@@ -3,6 +3,7 @@ import Service from "../../models/Service.js";
 import Technician from "../../models/Technician.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
+import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
 
 const getTechnicianForUser = async (userId) => {
   const technician = await Technician.findOne({ user: userId });
@@ -38,17 +39,28 @@ export const createService = asyncHandler(async (req, res) => {
 
 export const getMyServices = asyncHandler(async (req, res) => {
   const technician = await getTechnicianForUser(req.user._id);
-  const services = await Service.find({ technician: technician._id }).sort({ createdAt: -1 });
+  const query = { technician: technician._id };
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
+  const [services, total] = await Promise.all([
+    Service.find(query)
+      .sort({ createdAt: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Service.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: services.length,
     data: services,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 
 export const getServices = asyncHandler(async (req, res) => {
   const { technicianId } = req.query;
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   const query = {};
 
   if (technicianId) {
@@ -58,12 +70,20 @@ export const getServices = asyncHandler(async (req, res) => {
     query.technician = technicianId;
   }
 
-  const services = await Service.find(query).sort({ createdAt: -1 });
+  const [services, total] = await Promise.all([
+    Service.find(query)
+      .sort({ createdAt: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Service.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: services.length,
     data: services,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 

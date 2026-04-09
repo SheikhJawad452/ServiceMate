@@ -3,17 +3,11 @@ import Report from "../../models/Report.js";
 import User from "../../models/User.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
-
-const parsePagination = (query) => {
-  const page = Math.max(Number(query.page) || 1, 1);
-  const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
+import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
 
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { role, isVerified, isActive } = req.query;
-  const { page, limit, skip } = parsePagination(req.query);
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
   const query = {};
 
   if (role) query.role = role;
@@ -30,12 +24,14 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     page,
     limit,
     total,
     results: users.length,
     data: users,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated: true }),
   });
 });
 
@@ -75,7 +71,7 @@ export const activateUserByAdmin = asyncHandler(async (req, res) => {
 
 export const getAllBookings = asyncHandler(async (req, res) => {
   const { status } = req.query;
-  const { page, limit, skip } = parsePagination(req.query);
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
   const query = {};
 
   if (status) query.status = status;
@@ -92,18 +88,20 @@ export const getAllBookings = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     page,
     limit,
     total,
     results: bookings.length,
     data: bookings,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated: true }),
   });
 });
 
 export const getReports = asyncHandler(async (req, res) => {
   const { status } = req.query;
-  const { page, limit, skip } = parsePagination(req.query);
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
   const query = {};
 
   if (status) query.status = status;
@@ -121,12 +119,14 @@ export const getReports = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     page,
     limit,
     total,
     results: reports.length,
     data: reports,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated: true }),
   });
 });
 

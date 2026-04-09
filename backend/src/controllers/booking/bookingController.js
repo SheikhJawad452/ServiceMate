@@ -13,6 +13,7 @@ import {
   bookingStatusEmailTemplate,
 } from "../../templates/bookingEmailTemplate.js";
 import { AppError } from "../../utils/AppError.js";
+import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
 
 const BOOKING_STATUSES = ["Pending", "Accepted", "Rejected", "Completed", "Cancelled"];
 const TECHNICIAN_STATUS_UPDATES = ["Accepted", "Rejected", "Completed"];
@@ -688,6 +689,7 @@ export const completeBookingWithBill = asyncHandler(async (req, res) => {
 });
 
 export const getMyBookings = asyncHandler(async (req, res) => {
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   let query = {};
 
   if (req.user.role === "user") {
@@ -704,51 +706,76 @@ export const getMyBookings = asyncHandler(async (req, res) => {
     throw new AppError("Unsupported user role for this operation.", 403);
   }
 
-  const bookings = await Booking.find(query)
-    .populate("user", "fullName email")
-    .populate("technician", "user location")
-    .populate("service", "serviceName price")
-    .sort({ scheduledDate: -1, startTime: -1 });
+  const [bookings, total] = await Promise.all([
+    Booking.find(query)
+      .populate("user", "fullName email")
+      .populate("technician", "user location")
+      .populate("service", "serviceName price")
+      .sort({ scheduledDate: -1, startTime: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Booking.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: bookings.length,
     data: bookings,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 
 export const getUserBookings = asyncHandler(async (req, res) => {
-  const bookings = await Booking.find({ user: req.user._id })
-    .populate({
-      path: "technician",
-      select: "user location",
-      populate: { path: "user", select: "fullName email" },
-    })
-    .populate("service", "serviceName price")
-    .sort({ scheduledDate: -1, startTime: -1 });
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
+  const query = { user: req.user._id };
+  const [bookings, total] = await Promise.all([
+    Booking.find(query)
+      .populate({
+        path: "technician",
+        select: "user location",
+        populate: { path: "user", select: "fullName email" },
+      })
+      .populate("service", "serviceName price")
+      .sort({ scheduledDate: -1, startTime: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Booking.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: bookings.length,
     data: bookings,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 
 export const getTechnicianBookings = asyncHandler(async (req, res) => {
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   const technician = await Technician.findOne({ user: req.user._id }).select("_id");
   if (!technician) {
     throw new AppError("Technician profile not found.", 404);
   }
 
-  const bookings = await Booking.find({ technician: technician._id })
-    .populate("user", "fullName email")
-    .populate("service", "serviceName price")
-    .sort({ scheduledDate: -1, startTime: -1 });
+  const query = { technician: technician._id };
+  const [bookings, total] = await Promise.all([
+    Booking.find(query)
+      .populate("user", "fullName email")
+      .populate("service", "serviceName price")
+      .sort({ scheduledDate: -1, startTime: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Booking.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: bookings.length,
     data: bookings,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });
 

@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Briefcase, MapPin, Search, SlidersHorizontal, Star, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { City, State } from "country-state-city";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/common/Pagination";
 import { api } from "@/services/api";
 import { formatRatingDisplay, hasValidRating, getTechnicianReviewCount } from "@/utils/technicianUtils";
 
@@ -38,6 +39,9 @@ export default function TechnicianListingPage() {
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [pagination, setPagination] = useState(null);
 
   useEffect(() => {
     const statesInIndia = State.getStatesOfCountry("IN").map((item) => item.name);
@@ -97,7 +101,7 @@ export default function TechnicianListingPage() {
     });
   };
 
-  const fetchTechnicians = async (searchFilters = filters) => {
+  const fetchTechnicians = async (searchFilters = filters, targetPage = page) => {
     setLoading(true);
     setError("");
     try {
@@ -105,9 +109,12 @@ export default function TechnicianListingPage() {
       if (searchFilters.state.trim()) params.state = searchFilters.state.trim();
       if (searchFilters.city.trim()) params.city = searchFilters.city.trim();
       if (searchFilters.service.trim()) params.service = searchFilters.service.trim();
+      params.page = targetPage;
+      params.limit = limit;
       const response = await api.get("/technicians", { params });
       const results = Array.isArray(response?.data) ? response.data : [];
       setTechnicians(results);
+      setPagination(response?.pagination || null);
     } catch (apiError) {
       const errorMessage = apiError?.message || "Failed to load technicians.";
       setError(errorMessage);
@@ -119,17 +126,19 @@ export default function TechnicianListingPage() {
   };
 
   const handleSearch = async () => {
-    fetchTechnicians(filters);
+    setPage(1);
+    fetchTechnicians(filters, 1);
   };
 
-  const handleClearFilters = useCallback(() => {
+  const handleClearFilters = () => {
     const defaultFilters = { state: "", city: "", service: "" };
     setFilters(defaultFilters);
+    setPage(1);
     setShowStateSuggestions(false);
     setShowCitySuggestions(false);
     setShowServiceSuggestions(false);
-    fetchTechnicians(defaultFilters);
-  }, []);
+    fetchTechnicians(defaultFilters, 1);
+  };
 
   const filteredServiceSuggestions = useMemo(() => {
     const query = filters.service.trim().toLowerCase();
@@ -141,8 +150,8 @@ export default function TechnicianListingPage() {
   const filteredCitySuggestions = useMemo(() => cityCatalog, [cityCatalog]);
 
   useEffect(() => {
-    fetchTechnicians({ state: "", city: "", service: "" });
-  }, []);
+    fetchTechnicians(filters);
+  }, [page]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-orange-50 px-4 py-10 text-slate-900 sm:px-6">
@@ -327,6 +336,7 @@ export default function TechnicianListingPage() {
               return (
                 <motion.article
                   key={technician._id}
+                  data-testid="technician-card"
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                   initial={{ opacity: 0, y: 12 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -371,6 +381,7 @@ export default function TechnicianListingPage() {
               );
             })}
           </div>
+          <Pagination page={page} totalPages={pagination?.totalPages || 1} onPageChange={setPage} />
         </section>
       </section>
     </main>

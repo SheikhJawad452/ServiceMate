@@ -4,6 +4,7 @@ import Review from "../../models/Review.js";
 import Technician from "../../models/Technician.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
+import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
 
 const recalculateTechnicianRating = async (technicianId) => {
   const stats = await Review.aggregate([
@@ -146,6 +147,7 @@ export const updateReview = asyncHandler(async (req, res) => {
 
 export const getReviews = asyncHandler(async (req, res) => {
   const { technicianId } = req.query;
+  const { page, limit, skip, isPaginated } = parsePagination(req.query);
   const query = { isVisible: true };
 
   if (technicianId) {
@@ -155,15 +157,22 @@ export const getReviews = asyncHandler(async (req, res) => {
     query.technician = technicianId;
   }
 
-  const reviews = await Review.find(query)
-    .populate("user", "fullName avatarUrl")
-    .populate("technician", "user avgRating averageRating")
-    .populate("booking", "scheduledDate startTime endTime")
-    .sort({ createdAt: -1 });
+  const [reviews, total] = await Promise.all([
+    Review.find(query)
+      .populate("user", "fullName avatarUrl")
+      .populate("technician", "user avgRating averageRating")
+      .populate("booking", "scheduledDate startTime endTime")
+      .sort({ createdAt: -1 })
+      .skip(isPaginated ? skip : 0)
+      .limit(isPaginated ? limit : 0),
+    Review.countDocuments(query),
+  ]);
 
   res.status(200).json({
+    success: true,
     status: "success",
     results: reviews.length,
     data: reviews,
+    pagination: buildPaginationMeta({ total, page, limit, isPaginated }),
   });
 });

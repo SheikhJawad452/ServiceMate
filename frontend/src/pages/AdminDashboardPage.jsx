@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/common/Pagination";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/services/api";
 
@@ -13,18 +14,28 @@ export default function AdminDashboardPage() {
   const [reports, setReports] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [usersPage, setUsersPage] = useState(1);
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [reportsPage, setReportsPage] = useState(1);
+  const [pageLimit] = useState(10);
+  const [usersPagination, setUsersPagination] = useState(null);
+  const [bookingsPagination, setBookingsPagination] = useState(null);
+  const [reportsPagination, setReportsPagination] = useState(null);
 
   const fetchAdminData = async () => {
     setError("");
     try {
       const [usersRes, bookingsRes, reportsRes] = await Promise.all([
-        api.get("/admin/users"),
-        api.get("/admin/bookings"),
-        api.get("/admin/reports"),
+        api.get("/admin/users", { params: { page: usersPage, limit: pageLimit } }),
+        api.get("/admin/bookings", { params: { page: bookingsPage, limit: pageLimit } }),
+        api.get("/admin/reports", { params: { page: reportsPage, limit: pageLimit } }),
       ]);
       setUsers(usersRes?.data || []);
       setBookings(bookingsRes?.data || []);
       setReports(reportsRes?.data || []);
+      setUsersPagination(usersRes?.pagination || null);
+      setBookingsPagination(bookingsRes?.pagination || null);
+      setReportsPagination(reportsRes?.pagination || null);
     } catch (apiError) {
       setError(apiError?.message || "Failed to load admin dashboard data.");
     }
@@ -32,7 +43,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [usersPage, bookingsPage, reportsPage]);
 
   const updateReportStatus = async (reportId, status) => {
     setMessage("");
@@ -131,6 +142,7 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={usersPage} totalPages={usersPagination?.totalPages || 1} onPageChange={setUsersPage} />
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow">
@@ -148,6 +160,11 @@ export default function AdminDashboardPage() {
               </article>
             ))}
           </div>
+          <Pagination
+            page={bookingsPage}
+            totalPages={bookingsPagination?.totalPages || 1}
+            onPageChange={setBookingsPage}
+          />
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow">
@@ -173,6 +190,7 @@ export default function AdminDashboardPage() {
               </article>
             ))}
           </div>
+          <Pagination page={reportsPage} totalPages={reportsPagination?.totalPages || 1} onPageChange={setReportsPage} />
         </section>
       </div>
     </main>

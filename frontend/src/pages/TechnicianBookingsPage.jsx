@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/common/Pagination";
 import { api } from "@/services/api";
 
 const statusClassMap = {
@@ -36,14 +37,20 @@ export default function TechnicianBookingsPage() {
   const [serviceCharge, setServiceCharge] = useState(0);
   const [billItems, setBillItems] = useState([{ name: "", price: "" }]);
   const [profileMissing, setProfileMissing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [pagination, setPagination] = useState(null);
 
   const fetchDashboardData = async () => {
     setError("");
     setProfileMissing(false);
     setBookingsLoading(true);
     try {
-      const bookingsRes = await api.get("/bookings/technician");
+      const bookingsRes = await api.get("/bookings/technician", {
+        params: { page, limit },
+      });
       setBookings(bookingsRes?.data || []);
+      setPagination(bookingsRes?.pagination || null);
       try {
         await api.get("/technicians/me/profile");
       } catch (profileError) {
@@ -60,7 +67,7 @@ export default function TechnicianBookingsPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [page]);
 
   const normalizeStatus = (status) => String(status || "").toLowerCase();
 
@@ -398,6 +405,7 @@ export default function TechnicianBookingsPage() {
                 })
               : null}
           </div>
+          <Pagination page={page} totalPages={pagination?.totalPages || 1} onPageChange={setPage} />
         </section>
       </div>
 
