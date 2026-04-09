@@ -116,6 +116,7 @@ ServiceMate/
 │       │   │   ├── AuthInput.jsx         # Styled form input
 │       │   │   ├── AuthNavbar.jsx        # Auth pages navbar
 │       │   │   ├── AuthTabs.jsx          # Login/Signup tabs
+│       │   │   ├── HelpWidget.jsx        # Floating FAQ/help panel with role-based actions
 │       │   │   ├── IndianLocationSelect.jsx  # Country/State/City selector
 │       │   │   ├── LoadingScreen.jsx     # App loading screen
 │       │   │   └── Navbar.jsx            # Main navigation bar
@@ -142,8 +143,12 @@ ServiceMate/
 │       ├── context/
 │       │   └── AuthContext.jsx       # Authentication context (login, logout, user state)
 │       │
+│       ├── config/
+│       │   └── rbac.js               # Central role/route permission config
+│       │
 │       ├── hooks/
 │       │   ├── useNavigateWithLoader.js  # Navigation with loading state
+│       │   ├── useRBAC.js                # RBAC helper hook (role checks/navigation)
 │       │   └── useTechnicians.js         # Technician data fetching hook
 │       │
 │       ├── lib/
@@ -167,6 +172,7 @@ ServiceMate/
 │       │   ├── TechnicianProfilePage.jsx     # Public technician profile
 │       │   ├── TechnicianServicesPage.jsx    # Manage services
 │       │   ├── TechnicianWorkspacePage.jsx   # Unified technician workspace
+│       │   ├── UnauthorizedPage.jsx          # Access denied page for unauthorized routes
 │       │   ├── UserBookingsPage.jsx          # User bookings list
 │       │   └── UserDashboardPage.jsx         # User dashboard
 │       │
@@ -405,19 +411,20 @@ ServiceMate/
 | `/verify-otp` | OtpVerificationPage | Email verification |
 | `/forgot-password` | ForgotPasswordPage | Password recovery |
 | `/reset-password` | ResetPasswordPage | Set new password |
+| `/unauthorized` | UnauthorizedPage | Access denied screen |
 
 ### Protected Routes (All authenticated users)
 | Path | Page | Description |
 |------|------|-------------|
 | `/dashboard` | DashboardRedirectPage | Role-based redirect |
 | `/profile` | CompleteProfilePage | Profile management |
-| `/technicians` | TechnicianListingPage | Browse technicians |
-| `/technician/:id` | TechnicianProfilePage | View technician |
 | `/complete-profile` | CompleteProfilePage | Complete profile |
 
 ### User Routes
 | Path | Page | Description |
 |------|------|-------------|
+| `/technicians` | TechnicianListingPage | Browse technicians |
+| `/technician/:id` | TechnicianProfilePage | View technician profile |
 | `/user/dashboard` | UserDashboardPage | User dashboard |
 | `/bookings` | UserBookingsPage | My bookings |
 | `/bookings/new` | BookingCreatePage | Create booking |
@@ -476,6 +483,17 @@ Pending → Accepted → Completed (with bill)
 - OTP verification emails
 - Booking notifications
 - HTML templates for professional formatting
+
+### Help & Support Widget
+- Floating FAQ widget available globally in the app
+- Role-aware FAQ items with action buttons (guest/user/technician/admin)
+- Safe external support contact flow (`mailto`) with overlay cleanup to prevent ghost click-blocking layers
+
+### Role-Based Routing (Frontend RBAC)
+- Centralized permission config in `frontend/src/config/rbac.js`
+- Unauthorized access redirects to `/unauthorized`
+- User-only access for browsing technician marketplace routes
+- Technician/admin routes protected via role-based wrappers
 
 ---
 
@@ -551,9 +569,9 @@ npm run build  # Production build
 
 2. BROWSING & DISCOVERY
    ┌──────────┐     ┌──────────┐     ┌──────────┐
-   │  Browse  │ ──► │  Filter  │ ──► │   View   │
-   │Technicians│    │ by City/ │     │ Profile  │
-   │          │     │ Service  │     │ & Reviews│
+    │  Browse  │ ──► │  Filter  │ ──► │   View   │
+   │Technicians│    │ by State/│     │ Profile  │
+   │          │     │ City/Service │  │ & Reviews│
    └──────────┘     └──────────┘     └──────────┘
 
 3. BOOKING PROCESS
@@ -586,7 +604,7 @@ npm run build  # Production build
 
 **User Capabilities:**
 - Register and verify account via OTP
-- Browse technicians by location/service
+- Browse technicians by structured location (state/city) and service
 - View technician profiles, portfolios, and reviews
 - Book services with specific date, time, and location
 - Track booking status in real-time
@@ -778,8 +796,10 @@ npm run build  # Production build
 ServiceMate is a complete service booking platform with:
 - **Clean modular architecture** (MVC pattern)
 - **Role-based access control** (User, Technician, Admin)
+- **Frontend RBAC route guards** with unauthorized handling
 - **Secure authentication** (JWT + OTP email verification)
 - **Full booking lifecycle** with billing and PDF export
 - **Portfolio management** with Cloudinary image hosting
+- **Interactive Help/FAQ widget** with role-aware CTAs and safe overlay behavior
 - **Modern React frontend** with Tailwind CSS
 - **Production-ready security** middleware stack
